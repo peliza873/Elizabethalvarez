@@ -1,0 +1,133 @@
+---
+title: "Séries temporelles et reproductibilité"
+author: "Paz Elizabeth Alvarez"
+date: "29/07/2020"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+##------------------------------------------------------------------------------
+##--------Bibliotéques----------------------------------------------------------
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(lubridate)
+library(tibble)
+library(readr)
+library(purrr)
+library(stringr)
+library(forcats)
+library(fpp2)
+library(cowplot)
+library(e1071)
+
+##---------Donnês---------------------------------------------------------------
+hawai <- read.csv("C:/data/hawai.csv")
+
+##---------Il Devient les données de la colonne "time" en format "Date" --------
+hawai$time = date_decimal(hawai$time, tz = "UTC")
+hawai$time = as.Date(hawai$time)
+hawai$time <- ymd(hawai$time)
+```
+
+
+```{r}
+##---------Il graphique toutes les données par années, mois et jours------------
+hawai %>%
+  mutate(Year = time %>% year(),
+         Month = time %>% month(),
+         YearMonth = ymd(paste0(Year, "-", Month, "-01"))) %>%
+  filter(Year >= 1958 & Year < 2002) %>%
+  group_by(Year, YearMonth) %>%
+  dplyr::summarise(CO2 = mean(CO2, na.rm = TRUE)) %>%
+  ggplot(aes(x=YearMonth, y=CO2)) +
+  facet_wrap(~Year, scales = "free_x", ncol = 4) +
+  geom_line() +
+  expand_limits(y = 0)
+```
+
+
+```{r}
+##---1. créer une série temporelle du CO2 à partir des données de hawai.csv-----
+##--------------Il devient les données en format "Time series"------------------
+hawai_ts <- ts(hawai %>% dplyr::select(-time),
+               start = c(hawai$time[1] %>% year(), 3),
+               frequency = 12)
+
+window(hawai_ts)
+
+##---------------Il fait la graphique temporelle -------------------------------
+autoplot(hawai_ts)
+```
+
+
+```{r}
+##-------------Il fait les graphiques pour les series temporelles---------------
+ggA <- ggseasonplot(window(hawai_ts)) + ggtitle("")
+ggB <- ggseasonplot(window(hawai_ts), polar = TRUE) + ggtitle("")
+ggC <- ggsubseriesplot(window(hawai_ts), polar = TRUE) + ggtitle("") + labs(y="Flow")
+plot_grid(ggA, ggB, ggC, ncol = 3, labels = c("A", "B", "C"))
+
+##-------------Il fait la graphique d'autocorrélation --------------------------
+ggAcf(hawai_ts, ci = 0.95) + ggtitle("Hawai-CO2: Autocorrélation")
+```
+
+
+```{r}
+Box.test(hawai_ts, lag = 20, type = "Ljung-Box")
+```
+
+
+```{r}
+## 2. séparer la série en parties d'entraînement (environ 70% des données) et en partie test
+##------------Separation de données de Test et d'entraînement-------------------
+hawai_ts_train <- window(hawai_ts, start = 1958, end = 1988.99)##  70% de données.
+hawai_ts_test <- window(hawai_ts, start = 1989)## 30% de données.
+```
+
+
+```{r}
+## 3. créer un modèle prévisionnel sur les données d'entraînement, puis projeter 
+## la prévision de CO2 atmosphérique pour comparer aux données test ------------
+##----------Modèle prévisionnel "Snaive"----------------------------------------
+hm_naive <- snaive(hawai_ts_train, h = 24)
+autoplot(hm_naive) +
+  autolayer(fitted(hm_naive)) +
+  autolayer(hawai_ts_test, color = "green") +
+  labs(x = "Année", y = "CO2")
+
+##----------Precision de modéle prévisionnel------------------------------------
+accuracy(hm_naive, hawai_ts)
+```
+
+
+```{r}
+##---------Prévision du modéle "Holt-Winters" ----------------------------------
+hawai_hw <- hw(hawai_ts_train, damped = TRUE, h = 100, seasonal = "additive")
+autoplot(hawai_hw) + autolayer(fitted(hawai_hw))+
+  autolayer(hawai_ts_test, color = "green")
+```
+
+
+```{r}
+##---------Prévision du modéle "ARIMA" -----------------------------------------
+hawai_arima <- hawai_ts_train %>% auto.arima()
+hawai_arima %>% forecast(h = 50) %>% autoplot()+
+  autolayer(hawai_ts_test, color = "red")
+summary(hawai_arima)
+hawai_arima2 <- hawai_ts_train %>% auto.arima(lambda = 0)
+hawai_arima2 %>% forecast(h = 200) %>% autoplot()+
+  autolayer(hawai_ts_test, color = "red")
+```
+
+
+```{r}
+##  4. effectuer une analyse des résidus  
+##--------Modéle pour obtenir les residuals --------------------------------------
+checkresiduals(hm_naive)
+shapiro.test(residuals(hm_naive)) # non-normal si p-value < seuil (0.05)
+kurtosis(residuals(hm_naive), na.rm = TRUE) # le résultat d'un test de kurtosis sur une distribution normale devrait être de 0.
+```
