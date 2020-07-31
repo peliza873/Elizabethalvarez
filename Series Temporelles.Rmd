@@ -103,15 +103,6 @@ autoplot(hm_naive) +
 accuracy(hm_naive, hawai_ts)
 ```
 
-
-```{r}
-##---------Prévision du modéle "Holt-Winters" ----------------------------------
-hawai_hw <- hw(hawai_ts_train, damped = TRUE, h = 100, seasonal = "additive")
-autoplot(hawai_hw) + autolayer(fitted(hawai_hw))+
-  autolayer(hawai_ts_test, color = "green")
-```
-
-
 ```{r}
 ##---------Prévision du modéle "ARIMA" -----------------------------------------
 hawai_arima <- hawai_ts_train %>% auto.arima()

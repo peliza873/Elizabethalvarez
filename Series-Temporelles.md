@@ -131,7 +131,7 @@ hawai %>%
 
     ## `summarise()` regrouping output by 'Year' (override with `.groups` argument)
 
-![](Series-Temporelles_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+![](Series-Temporelles_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
 
 ``` r
 ##---1. créer une série temporelle du CO2 à partir des données de hawai.csv-----
@@ -239,7 +239,7 @@ window(hawai_ts)
 autoplot(hawai_ts)
 ```
 
-![](Series-Temporelles_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](Series-Temporelles_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
 ``` r
 ##-------------Il fait les graphiques pour les series temporelles---------------
@@ -249,14 +249,14 @@ ggC <- ggsubseriesplot(window(hawai_ts), polar = TRUE) + ggtitle("") + labs(y="F
 plot_grid(ggA, ggB, ggC, ncol = 3, labels = c("A", "B", "C"))
 ```
 
-![](Series-Temporelles_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](Series-Temporelles_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 ``` r
 ##-------------Il fait la graphique d'autocorrélation --------------------------
 ggAcf(hawai_ts, ci = 0.95) + ggtitle("Hawai-CO2: Autocorrélation")
 ```
 
-![](Series-Temporelles_files/figure-gfm/unnamed-chunk-5-2.png)<!-- -->
+![](Series-Temporelles_files/figure-gfm/unnamed-chunk-4-2.png)<!-- -->
 
 ``` r
 Box.test(hawai_ts, lag = 20, type = "Ljung-Box")
@@ -293,7 +293,7 @@ autoplot(hm_naive) +
 
     ## Warning: Removed 12 row(s) containing missing values (geom_path).
 
-![](Series-Temporelles_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](Series-Temporelles_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 ``` r
 ##----------Precision de modéle prévisionnel------------------------------------
@@ -308,22 +308,13 @@ accuracy(hm_naive, hawai_ts)
     ## Test set      1.754403
 
 ``` r
-##---------Prévision du modéle "Holt-Winters" ----------------------------------
-hawai_hw <- hw(hawai_ts_train, damped = TRUE, h = 100, seasonal = "additive")
-autoplot(hawai_hw) + autolayer(fitted(hawai_hw))+
-  autolayer(hawai_ts_test, color = "green")
-```
-
-![](Series-Temporelles_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
-
-``` r
 ##---------Prévision du modéle "ARIMA" -----------------------------------------
 hawai_arima <- hawai_ts_train %>% auto.arima()
 hawai_arima %>% forecast(h = 50) %>% autoplot()+
   autolayer(hawai_ts_test, color = "red")
 ```
 
-![](Series-Temporelles_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](Series-Temporelles_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
 summary(hawai_arima)
@@ -352,7 +343,7 @@ hawai_arima2 %>% forecast(h = 200) %>% autoplot()+
   autolayer(hawai_ts_test, color = "red")
 ```
 
-![](Series-Temporelles_files/figure-gfm/unnamed-chunk-10-2.png)<!-- -->
+![](Series-Temporelles_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
 
 ``` r
 ##  4. effectuer une analyse des résidus  
@@ -360,7 +351,7 @@ hawai_arima2 %>% forecast(h = 200) %>% autoplot()+
 checkresiduals(hm_naive)
 ```
 
-![](Series-Temporelles_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](Series-Temporelles_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
     ## 
     ##  Ljung-Box test
